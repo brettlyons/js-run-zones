@@ -1,31 +1,25 @@
 var http = require('http');
 var url = require('url');
 var staticServer = require('node-static');
-// require('dotenv').load()
-//var db = require('monk')(process.env.MONGOLAB_URI);
-//var db = require('monk')('localhost/tasksdb');
-//var tasks = db.get('tasks');
 
-var port = process.env.PORT || 3000;
+var port = process.env.PORT || 3000; // heroku will want to bind the server to $PORT
 var file = new(staticServer.Server)();
 
 var server = http.createServer(function (req, res) {
   var urlKeys = url.parse(req.url, true);
-  if(req.method != 'GET'){
-    return res.end('Send me a GET\n');
-  }
-  console.log(urlKeys.pathname);
-  console.log(req.url);
-  // if (urlKeys.pathname == '/api/tasks'){
-  //   tasks.find({}, function(err, tasks) {
-  //     res.writeHead(200, {'Content-Type':'application/json'});
-  //     res.end(JSON.stringify(tasks)); // tasks is an array here.
-  //   });
+
+  // if(req.method != 'GET'){
+  //   return res.end('Send me a GET\n');
   // }
-  if (urlKeys.pathname == "/api") {
-    console.log(req.headers);
-    console.log(req.authorization);
-  }
+
+  console.log("PATHNAME: ", urlKeys.pathname);
+  console.log("SENT: ", req.url);
+  // if (urlKeys.pathname == "/api") {
+  //   console.log(req.headers);
+  //   console.log(req.authorization);
+  // }
+  // testing stuffs
+  
   else {
     file.serve(req, res);
   }
@@ -33,7 +27,7 @@ var server = http.createServer(function (req, res) {
   //   tasks.insert({
   //     //put new task description into db . . .
   //   });
-  // }
+  // } // boilerplate for other methods
 });
 
 server.listen(port);
