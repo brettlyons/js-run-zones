@@ -20,14 +20,13 @@ var server = http.createServer(function (req, res) {
   // }
   // testing stuffs
   
-  else {
-    file.serve(req, res);
-  }
   // if(req.method == "POST") {
   //   tasks.insert({
   //     //put new task description into db . . .
   //   });
   // } // boilerplate for other methods
+
+  file.serve(req, res);
 });
 
 server.listen(port);

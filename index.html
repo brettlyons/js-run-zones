@@ -30,32 +30,65 @@
     </div>
     <script>
      $( document ).ready(function () {
-       var deviceId;
-       var authKey;
-       var zonesArray;
-       var errors = {
-         keyLengthError: "<li> Valid keys are 36 characters in size, including dashes. </li>"
-       } // this may only be 1 unit long -- but the idea here is that other errors can be added / ref'd when necessary
-       
+       var globalAppState = {
+         authKey: "",
+         personId: "",
+         zoneList: [],
+         errors: {
+          keyLengthError: "<li> Valid keys are 36 characters in size, including dashes. </li>"
+         }
+       }
+
+       function getId (object) {
+         return object.id;
+       }
+       function getName (object) {
+         return object.name;
+       }
+       /* function getZoneIdsPer(device) {
+          return device.zones.map(function (zone) {
+          return zone.id
+          })
+          } */
        $("#get-zones").on('click', function (event) {
-         authKey = $("#api-key").val();
-         if (authKey.length > 36 || authKey.length < 36) {
-           $("#key-error-list").append(errors['keyLengthError']);
+         globalAppState['authKey'] = $("#api-key").val(); // we need this set on click. 
+
+         if (globalAppState.authKey.length > 36 || globalAppState.authKey.length < 36) {
+           $("#key-error-list").append(globalAppState.errors['keyLengthError']);
          }
 
          else {
            $("#key-error-list").html("");
-           $.ajax({
+           $.ajaxSetup({
              contentType: "application/json",
              headers: {
-               'Authorization': "Bearer " + authKey 
+               'Authorization': "Bearer " + globalAppState.authKey 
              },
+             error: function (jqXHR, textStatus, errorThrown) {
+               console.log("Uh oh!  There was an error!  Your koan is as follows: ");
+               console.log("Status: ", textStatus + "\n" + "The jQuery XHR: ", jqXHR + "\n", "The exception, may be null: ", errorThrown);
+             }
+           }); // *ALERT* jQuery docs recommend against using ajaxSetup.  In this case, it should DRY the code.
+
+         
+         
+           $.ajax({
              url: "https://api.rach.io/1/public/person/info",
-             complete: function (res) {
-               deviceId = res.id;
+             success: function (res) {
+               globalAppState['personId'] = res.id;
+               $.ajax({
+                 url: "https://api.rach.io/1/public/person/" + globalAppState.personId,
+                 success: function (res) {
+                   // globalAppState['deviceList'] = res.devices; // may be needed or useful later
+                   // doing a lot of filtering here via the GC
+                   globalAppState['zoneList'] = res.devices.map(function (device) {
+                     return device.zones;
+                   });
+                 }
+               });
              }
            }).done(function (data) {
-             console.log("Returned AJAX data: ", data);
+             console.log("Done with AJAX reqs");
            });
          }
        });
