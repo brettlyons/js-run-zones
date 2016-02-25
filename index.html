@@ -1,6 +1,65 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
     <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
   </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="api-key-container">
+          <div class="input-group">
+            <span class="input-group-addon">
+              <input type="text" class="form-control" placeholder="API key" id="api-key" value="c3667b81-92a6-4913-b83c-64cc713cbc1e">
+              <span class="input-group-btn">
+                <button class="btn btn-default" id="get-zones">Get A List of Zones!</button>
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <ul id="key-error-list">
+        </ul>
+      </div>
+      <hr>
+    </div>
+    <div class="zone-list-container">
+    </div>
+    <script>
+     $( document ).ready(function () {
+       var deviceId;
+       var authKey;
+       var zonesArray;
+       var errors = {
+         keyLengthError: "<li> Valid keys are 36 characters in size, including dashes. </li>"
+       } // this may only be 1 unit long -- but the idea here is that other errors can be added / ref'd when necessary
+       
+       $("#get-zones").on('click', function (event) {
+         authKey = $("#api-key").val();
+         if (authKey.length > 36 || authKey.length < 36) {
+           $("#key-error-list").append(errors['keyLengthError']);
+         }
+
+         else {
+           $("#key-error-list").html("");
+           $.ajax({
+             contentType: "application/json",
+             headers: {
+               'Authorization': "Bearer " + authKey 
+             },
+             url: "https://api.rach.io/1/public/person/info",
+             complete: function (res) {
+               deviceId = res.id;
+             }
+           }).done(function (data) {
+             console.log("Returned AJAX data: ", data);
+           });
+         }
+       });
+     });
+    </script>
+  </body>
 </html>
