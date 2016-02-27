@@ -25,19 +25,9 @@
         <ul id="key-error-list">
         </ul>
       </div>
-      <hr>
     </div>
     <div class="container" id="zone-list-container">
       <div class="row" id="the-zone-id-from-api">
-        <div class="col-md-3" id="zone-name-from-api">
-          <!-- name / icons -->
-        </div>
-        <div class="col-md-3" id="zone-status-from-api">
-          <!-- status / duration info -->
-        </div>
-        <div class="col-md-3" id="zone-buttons-from-api">
-          <!-- buttons -->
-        </div>
         <hr>
       </div>
     </div>
@@ -53,9 +43,6 @@
          },
        }
 
-       function makeZoneRow (zoneImgUrl, zoneCropImgUrl, zoneId, zoneName, zoneStatus) {
-         return ' <div class="row" id="'+ zoneId +'"> <div class="col-md-3"> <h2>' + zoneName + '</h2><img src="' + zoneImgUrl + '"/><img src="' + zoneCropImgUrl + '"/> </div> <div class="col-md-3"><h2>' + zoneStatus + '</h2></div> <div class="col-md-3" id="zone-buttons"> <!-- duration and start / stop buttons --> </div> <hr> </div>';
-       }
 
        
        // -- update
@@ -74,12 +61,6 @@
        function getImg (object) {
          return object.imageUrl;
        }
-       /* function getImgPer (object) {
-          return function (customField) {
-          return object.customField.imageUrl;
-          }
-          // return object.imageUrl;
-          } */
        
        function getZoneFieldsPer(fieldGetterFn) {
          return function (device) {
@@ -96,6 +77,25 @@
        
        var getZoneIdsPer = getZoneFieldsPer(getId);
        var getZoneNamesPer = getZoneFieldsPer(getName);
+
+       function getProgress(zone) {
+         return "60%";
+       }
+       
+       function makeZoneRow (zone) {
+         return '<hr><div class="row" id="'+ getId(zone) +'">\
+            <div class="col-md-4"> <h2>' + getName(zone) + '</h2><img src="' + getNozzleImgUrl(zone) + '"/><img src="' + getCropImgUrl(zone) + '"/></div>\
+            <div class="col-md-4"><div class="progress"><div class="progress-bar" role="progressbar" style="width: ' + getProgress(zone) + '"></div></div></div>\
+            <div class="col-md-4" id="zone-buttons"><button class="btn btn-lg btn-info pull-right">Start Zone</button>\
+            <button class="btn btn-lg btn-warning">Stop Zone</button>\
+            <p><br>\
+            <div class="input-group">\
+              <span class="input-group-addon" id="duration-addon">Duration:</span>\
+              <input type="text" class="form-control" id="duration-box" aria-describedby="duration-addon">\
+            </div>\
+            </div>\
+            </div>';
+       }
 
        $("#get-zones").on('click', function (event) {  
 
@@ -131,7 +131,7 @@
                  success: function (res) {
 
                    globalAppState['deviceList'] = res.devices;
-                   console.log("ZONE: ", globalAppState.deviceList.map(getZones));
+                   // console.log("ZONE: ", globalAppState.deviceList.map(getZones));
                    globalAppState.deviceList.forEach(function (device) {
                      device.zones.sort(function (a,b) {
                        return a.zoneNumber - b.zoneNumber;
@@ -139,7 +139,7 @@
 
                      $("#zone-list-container").append('<p> <h1>'+ getName(device) +'</h1>');
                      device.zones.forEach(function (zone) {
-                      $("#zone-list-container").append(makeZoneRow(getNozzleImgUrl(zone), getCropImgUrl(zone), getId(zone), getName(zone), "Zone Status Test"));
+                      $("#zone-list-container").append(makeZoneRow(zone));
                      })
                    })
                  }
