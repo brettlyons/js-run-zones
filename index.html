@@ -8,6 +8,8 @@
   </head>
   <body>
     <div class="container">
+      <div class="row" style="height: 100px">
+      </div>
       <div class="row">
         <div class="col-md-12">
           <div class="api-key-container">
@@ -27,24 +29,27 @@
       </div>
     </div>
     <div class="container" id="zone-list-container">
-      <div class="row" id="the-zone-id-from-api">
+      <div class="row">
         <hr>
       </div>
     </div>
     <script>
      $( document ).ready(function () {
+       // saturday notes -- ditch the progress bar?  That would simplify things quite a bit
+       // instead, show a "time remaining" amount.
+
        // -- model
+
        var globalAppState = {
          authKey: "",
          personId: "",
          deviceList: [],
          errorLib: {
-           keyLengthError: "<li> Valid keys are 36 characters in size, including dashes. </li>"
+           keyLengthError: "<li> Valid keys are 36 characters in size, including dashes. </li>",
+           durationError: "<li> Duration must be between 0 and 180 minutes. </li>"
          },
        }
 
-
-       
        // -- update
        function getId (object) {
          return object.id;
@@ -61,39 +66,63 @@
        function getImg (object) {
          return object.imageUrl;
        }
+
+       function updateTimeRemaining (zoneId, time) {
+         $("#time-remaining-" + zoneId).text(time);
+       }
+
+       function startUpdates(zoneId) {
+         var currentId = setInterval (function () {
+           const domTimeRemaining = $("#time-remaining-" + zoneId).text() - 1;
+           console.log("interval number", domTimeRemaining);
+           if(domTimeRemaining <= 0) {
+             clearInterval(currentId);
+           }
+           updateTimeRemaining(zoneId, domTimeRemaining); 
+         }, 60000)
+       }
        
-       function getZoneFieldsPer(fieldGetterFn) {
-         return function (device) {
-           return getZones(device).map(fieldGetterFn);
+       function makeBtnEvent(zone, btnId) {
+         const zoneId = getId(zone);
+         return function (event) {
+           var tmpDuration = (btnId == 'btn-on-') ? 60 * Number($("#duration-" + zoneId).val()) : 0;
+           console.log('tmpDuration', tmpDuration);
+           $.ajax({
+             method: "PUT",
+             url: "https://api.rach.io/1/public/zone/start",
+             data: "{id : " + zoneId + ", duration : " + tmpDuration + "}",
+             success: function (res) {
+               updateTimeRemaining(zoneId, (tmpDuration/60).toFixed(0));
+               startUpdates(zoneId);
+             }
+           });
          }
-       } // I could include a lib that would include currying.  I am choosing not to for now, since that's extra kb.
+       }
 
-       var getNozzleImgUrl = function (zone) {
-         return getImg (zone.customNozzle);
-       }
-       var getCropImgUrl = function (zone) {
-         return getImg(zone.customCrop);
-       }
-       
-       var getZoneIdsPer = getZoneFieldsPer(getId);
-       var getZoneNamesPer = getZoneFieldsPer(getName);
-
-       function getProgress(zone) {
-         return "60%";
-       }
-       
        function makeZoneRow (zone) {
-         return '<hr><div class="row" id="'+ getId(zone) +'">\
-            <div class="col-md-4"> <h2>' + getName(zone) + '</h2><img src="' + getNozzleImgUrl(zone) + '"/><img src="' + getCropImgUrl(zone) + '"/></div>\
-            <div class="col-md-4"><div class="progress"><div class="progress-bar" role="progressbar" style="width: ' + getProgress(zone) + '"></div></div></div>\
-            <div class="col-md-4" id="zone-buttons"><button class="btn btn-lg btn-info pull-right">Start Zone</button>\
-            <button class="btn btn-lg btn-warning">Stop Zone</button>\
-            <p><br>\
-            <div class="input-group">\
-              <span class="input-group-addon" id="duration-addon">Duration:</span>\
-              <input type="text" class="form-control" id="duration-box" aria-describedby="duration-addon">\
-            </div>\
-            </div>\
+         return '<div class="row" id="'+ getId(zone) +'">\
+              <div class="panel panel-default">\
+                <div class="panel-heading">\
+                  <h2 class="panel-title">' + getName(zone) + '</h2>\
+                </div>\
+                <div class="panel-body">\
+                  <div class="col-md-6">\
+                      <img src="' + getImg(zone.customNozzle) + '"/><img src="' + getImg(zone.customCrop) + '"/>\
+                  </div>\
+                  <div class="col-md-6" id="zone-buttons">\
+                    <h3>Time Remaining: <div id="time-remaining-' + getId(zone) +'">0</div> Minutes</h3>\
+                    <p>\
+                    <div class="input-group input-group-lg">\
+                      <span class="input-group-addon" id="duration-addon">Duration:</span>\
+                      <input type="number" class="form-control" id="duration-' + getId(zone) + '" aria-describedby="duration-addon">\
+                      <div class="input-group-btn">\
+                        <button class="btn btn-lg btn-success" id="btn-on-' + getId(zone) + '">On</button>\
+                        <button class="btn btn-lg btn-warning" id="btn-off-' + getId(zone) + '">Off</button>\
+                      </div>\
+                    </div>\
+                  </div>\
+                </div>\
+              </div>\
             </div>';
        }
 
@@ -118,7 +147,7 @@
              },
              error: function (jqXHR, textStatus, errorThrown) {
                console.log("Uh oh!  There was an error!  Your koan is as follows: ");
-               console.log("Status: ", textStatus + "\n" + "The jQuery XHR: ", jqXHR + "\n", "The exception, may be null: ", errorThrown);
+               console.log("Status: ", textStatus + "\n" + "The jQuery XHR: ", jqXHR + "\n", "The exception (may be null or undefined): ", errorThrown);
              }
            }); // *ALERT* jQuery docs recommend against using ajaxSetup.  In this case, it should DRY the code.
            
@@ -140,6 +169,8 @@
                      $("#zone-list-container").append('<p> <h1>'+ getName(device) +'</h1>');
                      device.zones.forEach(function (zone) {
                       $("#zone-list-container").append(makeZoneRow(zone));
+                      $("#btn-on-" + getId(zone)).click(makeBtnEvent(zone, "btn-on-"));
+                      $("#btn-off-" + getId(zone)).click(makeBtnEvent(zone, "btn-off-"));
                      })
                    })
                  }
