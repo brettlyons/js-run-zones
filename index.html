@@ -36,9 +36,6 @@
     </div>
     <script>
      $( document ).ready(function () {
-       // saturday notes -- ditch the progress bar?  That would simplify things quite a bit
-       // instead, show a "time remaining" amount.
-
        // -- model
 
        var globalAppState = {
@@ -128,7 +125,7 @@
                       <p>\
                       <div class="input-group input-group-lg">\
                         <span class="input-group-addon" id="duration-addon">Duration:</span>\
-                        <input type="number" class="form-control" id="duration-' + zoneId + '" aria-describedby="duration-addon">\
+                        <input type="number" class="form-control" id="duration-' + zoneId + '" aria-describedby="duration-addon"></input>\
                         <div class="input-group-btn">\
                           <button class="btn btn-lg btn-success" id="btn-on-' + zoneId + '">On</button>\
                           <button class="btn btn-lg btn-warning" id="btn-off-' + zoneId + '">Off</button>\
@@ -183,8 +180,30 @@
                      });
 
                      $("#zone-list-container").append('<p><div class="row"><div class="col-md-12"><h1>'+ getName(device) +'</h1>\
-                        <button class="btn btn-lg btn-info">Run All</button>\
-                      </div></div>');
+                        <div class="input-group input-group-lg">\
+                          <span class="input-group-addon" id="duration-addon-all">Duration:</span>\
+                          <input type="number" class="form-control" id="duration-all" aria-describedby="duration-addon-all"></input>\
+                          <div class="input-group-btn">\
+                            <button class="btn btn-lg btn-success" id="btn-set-all">Set All</button>\
+                            <button class="btn btn-lg btn-warning" id="btn-clear-all">Clear All</button>\
+                            <button class="btn btn-lg btn-info" id="btn-run-all">Run All</button>\
+                          </div>\
+                        </div>\
+                      </div></div>\
+                      <p>');
+
+                     $('#btn-set-all').click(function (event) {
+                       $("input[id*='duration-']").val($("#duration-all").val());
+                     });
+
+                     $('#btn-clear-all').click(function (event) {
+                       $("input[id*='duration-']").val(0);
+                     });
+
+                     $("#btn-run-all").click(function (event) {
+                       $("button[id*='btn-on-']").click();
+                     });
+                     
                      // $("#zone-list-container").append('')
                      device.zones.forEach(function (zone) {
                        $("#zone-list-container").append(makeZoneRow(zone));
