@@ -44,7 +44,7 @@
          deviceList: [],
          errorLib: {
            keyLengthError: "<li> Valid keys are 36 characters in size, including dashes. </li>",
-           durationError: "<li> Duration must be between 0 and 180 minutes. </li>"
+           durationError: "<li> Duration must be a number between 0 and 180 minutes.</li>"
          },
        }
 
@@ -55,10 +55,6 @@
 
        function getName (object) {
          return object.name;
-       }
-
-       function getZones (object) {
-         return object.zones;
        }
 
        function getImg (object) {
@@ -86,7 +82,7 @@
 
            const tmpDuration = (btnId == 'btn-on-') ? 60 * Number($("#duration-" + zoneId).val()) : 0;
 
-           if (tmpDuration < 0 || tmpDuration > (180 * 60) ) {
+           if (tmpDuration < 0 || tmpDuration > (180 * 60) || !($.isNumeric($("#duration-" + zoneId).val()))) {
              $("#error-" + zoneId).append(globalAppState.errorLib['durationError']);
              $("#error-" + zoneId).addClass("alert alert-danger");
            }
@@ -173,7 +169,6 @@
                  success: function (res) {
 
                    globalAppState['deviceList'] = res.devices;
-                   // console.log("ZONE: ", globalAppState.deviceList.map(getZones));
                    globalAppState.deviceList.forEach(function (device) {
                      device.zones.sort(function (a,b) {
                        return a.zoneNumber - b.zoneNumber;
@@ -189,11 +184,24 @@
                             <button class="btn btn-lg btn-info" id="btn-run-all">Run All</button>\
                           </div>\
                         </div>\
+                        <ul id="error-dur-all"></ul>\
                       </div></div>\
                       <p>');
 
                      $('#btn-set-all').click(function (event) {
-                       $("input[id*='duration-']").val($("#duration-all").val());
+                       const tmpDuration = 60 * Number($("#duration-all").val()) || 0;
+
+                       if (tmpDuration < 0 || tmpDuration > (180 * 60) || !($.isNumeric($("#duration-all").val()))) {
+                         $("#error-dur-all").append(globalAppState.errorLib['durationError']);
+                         $("#error-dur-all").addClass("alert alert-danger");
+                       }
+                       
+                       else {
+                         $("#error-dur-all").html("");
+                         $("#error-dur-all").removeClass("alert alert-danger");
+
+                         $("input[id*='duration-']").val($("#duration-all").val());
+                       }
                      });
 
                      $('#btn-clear-all').click(function (event) {
