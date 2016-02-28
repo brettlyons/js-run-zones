@@ -73,10 +73,10 @@
          var currentId = setInterval (function () {
            const domTimeRemaining = $("#time-remaining-" + zoneId).text() - 1;
            // console.log("interval number", domTimeRemaining);
+           updateTimeRemaining(zoneId, domTimeRemaining); 
            if(domTimeRemaining <= 0) {
              clearInterval(currentId);
            }
-           updateTimeRemaining(zoneId, domTimeRemaining); 
          }, 60000)
        }
        
