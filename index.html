@@ -27,9 +27,7 @@
         <ul id="key-error-list">
         </ul>
       </div>
-    </div>
-    <div class="container" id="zone-list-container">
-      <div class="row">
+      <div class="container" id="zone-list-container">
         <hr>
       </div>
     </div>
@@ -74,7 +72,7 @@
        function startUpdates(zoneId) {
          var currentId = setInterval (function () {
            const domTimeRemaining = $("#time-remaining-" + zoneId).text() - 1;
-           console.log("interval number", domTimeRemaining);
+           // console.log("interval number", domTimeRemaining);
            if(domTimeRemaining <= 0) {
              clearInterval(currentId);
            }
@@ -85,40 +83,55 @@
        function makeBtnEvent(zone, btnId) {
          const zoneId = getId(zone);
          return function (event) {
-           var tmpDuration = (btnId == 'btn-on-') ? 60 * Number($("#duration-" + zoneId).val()) : 0;
-           console.log('tmpDuration', tmpDuration);
-           $.ajax({
-             method: "PUT",
-             url: "https://api.rach.io/1/public/zone/start",
-             data: "{id : " + zoneId + ", duration : " + tmpDuration + "}",
-             success: function (res) {
-               updateTimeRemaining(zoneId, (tmpDuration/60).toFixed(0));
-               startUpdates(zoneId);
-             }
-           });
+
+           const tmpDuration = (btnId == 'btn-on-') ? 60 * Number($("#duration-" + zoneId).val()) : 0;
+
+           if (tmpDuration < 0 || tmpDuration > (180 * 60) ) {
+             $("#error-" + zoneId).append(globalAppState.errorLib['durationError']);
+             $("#error-" + zoneId).addClass("alert alert-danger");
+           }
+           else {
+            $("#error-" + zoneId).html("");
+            $("#error-" + zoneId).removeClass("alert alert-danger");
+
+             updateTimeRemaining(zoneId, (tmpDuration/60).toFixed(0));
+             $.ajax({
+               method: "PUT",
+               url: "https://api.rach.io/1/public/zone/start",
+               data: "{id : " + zoneId + ", duration : " + tmpDuration + "}",
+               success: function (res) {
+                 startUpdates(zoneId);
+                 updateTimeRemaining(zoneId, (tmpDuration/60).toFixed(0));
+               }
+             });
+           }
          }
        }
 
        function makeZoneRow (zone) {
-         return '<div class="row" id="'+ getId(zone) +'">\
-              <div class="panel panel-default">\
-                <div class="panel-heading">\
-                  <h2 class="panel-title">' + getName(zone) + '</h2>\
-                </div>\
-                <div class="panel-body">\
-                  <div class="col-md-6">\
-                      <img src="' + getImg(zone.customNozzle) + '"/><img src="' + getImg(zone.customCrop) + '"/>\
+         const zoneId = getId(zone);
+         return '<div class="row" id="zone-block-'+ zoneId +'">\
+              <div class="col-md-12">\
+                <div class="panel panel-default">\
+                  <div class="panel-heading">\
+                    <h2 class="panel-title">' + getName(zone) + '</h2>\
                   </div>\
-                  <div class="col-md-6" id="zone-buttons">\
-                    <h3>Time Remaining: <div id="time-remaining-' + getId(zone) +'">0</div> Minutes</h3>\
-                    <p>\
-                    <div class="input-group input-group-lg">\
-                      <span class="input-group-addon" id="duration-addon">Duration:</span>\
-                      <input type="number" class="form-control" id="duration-' + getId(zone) + '" aria-describedby="duration-addon">\
-                      <div class="input-group-btn">\
-                        <button class="btn btn-lg btn-success" id="btn-on-' + getId(zone) + '">On</button>\
-                        <button class="btn btn-lg btn-warning" id="btn-off-' + getId(zone) + '">Off</button>\
+                  <div class="panel-body">\
+                    <div class="col-md-6">\
+                        <img src="' + getImg(zone.customNozzle) + '"/><img src="' + getImg(zone.customCrop) + '"/>\
+                    </div>\
+                    <div class="col-md-6" id="zone-buttons">\
+                      <h3>Time Remaining: <div id="time-remaining-' + zoneId +'">0</div> Minutes</h3>\
+                      <p>\
+                      <div class="input-group input-group-lg">\
+                        <span class="input-group-addon" id="duration-addon">Duration:</span>\
+                        <input type="number" class="form-control" id="duration-' + zoneId + '" aria-describedby="duration-addon">\
+                        <div class="input-group-btn">\
+                          <button class="btn btn-lg btn-success" id="btn-on-' + zoneId + '">On</button>\
+                          <button class="btn btn-lg btn-warning" id="btn-off-' + zoneId + '">Off</button>\
+                        </div>\
                       </div>\
+                      <ul id="error-' + zoneId +'"></ul>\
                     </div>\
                   </div>\
                 </div>\
@@ -166,11 +179,14 @@
                        return a.zoneNumber - b.zoneNumber;
                      });
 
-                     $("#zone-list-container").append('<p> <h1>'+ getName(device) +'</h1>');
+                     $("#zone-list-container").append('<p><div class="row"><div class="col-md-12"><h1>'+ getName(device) +'</h1>\
+                        <button class="btn btn-lg btn-info">Run All</button>\
+                      </div></div>');
+                     // $("#zone-list-container").append('')
                      device.zones.forEach(function (zone) {
-                      $("#zone-list-container").append(makeZoneRow(zone));
-                      $("#btn-on-" + getId(zone)).click(makeBtnEvent(zone, "btn-on-"));
-                      $("#btn-off-" + getId(zone)).click(makeBtnEvent(zone, "btn-off-"));
+                       $("#zone-list-container").append(makeZoneRow(zone));
+                       $("#btn-on-" + getId(zone)).click(makeBtnEvent(zone, "btn-on-"));
+                       $("#btn-off-" + getId(zone)).click(makeBtnEvent(zone, "btn-off-"));
                      })
                    })
                  }
