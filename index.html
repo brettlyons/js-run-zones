@@ -68,7 +68,6 @@
        function startUpdates(zoneId) {
          var currentId = setInterval (function () {
            const domTimeRemaining = $("#time-remaining-" + zoneId).text() - 1;
-           // console.log("interval number", domTimeRemaining);
            updateTimeRemaining(zoneId, domTimeRemaining); 
            if(domTimeRemaining < 1) {
              clearInterval(currentId);
@@ -76,33 +75,72 @@
          }, 60000) // one minute is 60000ms.
        }
        
-       function makeBtnEvent(zone, btnId) {
-         const zoneId = getId(zone);
-         return function (event) {
-
-           const tmpDuration = (btnId == 'btn-on-') ? 60 * Number($("#duration-" + zoneId).val()) : 0;
-
-           if (tmpDuration < 0 || tmpDuration > (180 * 60) || !($.isNumeric($("#duration-" + zoneId).val()))) {
-             $("#error-" + zoneId).append(globalAppState.errorLib['durationError']);
-             $("#error-" + zoneId).addClass("alert alert-danger");
+       function startZoneAjax (zoneId, duration) {
+         updateTimeRemaining(zoneId, (duration/60).toFixed(0)); // duration is in seconds, so this converts to minutes.
+         $.ajax({
+           method: "PUT",
+           url: "https://api.rach.io/1/public/zone/start",
+           data: "{id : " + zoneId + ", duration : " + duration + "}",
+           success: function (res) {
+             startUpdates(zoneId);
+             updateTimeRemaining(zoneId, (duration/60).toFixed(0));
            }
-           else {
-            $("#error-" + zoneId).html("");
-            $("#error-" + zoneId).removeClass("alert alert-danger");
+         });
+       }
 
-             updateTimeRemaining(zoneId, (tmpDuration/60).toFixed(0));
-             $.ajax({
-               method: "PUT",
-               url: "https://api.rach.io/1/public/zone/start",
-               data: "{id : " + zoneId + ", duration : " + tmpDuration + "}",
-               success: function (res) {
-                 startUpdates(zoneId);
-                 updateTimeRemaining(zoneId, (tmpDuration/60).toFixed(0));
-               }
-             });
+       function btnComponent(btnCssType, btnId, btnText, btnHandler) { 
+         const btnHtml = '<button class="btn btn-lg ' + btnCssType + '" id="' + btnId + '">' + btnText + '</button>'
+         setTimeout(function () {
+           $("#" + btnId).click(btnHandler);
+         }, 34); // add the handler after the button is placed in the DOM, 2 frames at 17ms / frame, or 60 frames / second.
+         return btnHtml;
+       }  
+
+       function makeBtnEvent(continuationFn, btnId, zone) {
+         const zoneId = (!zone) ? null : getId(zone);
+
+         return function (event) {
+           const tmpDuration = (btnId == 'btn-on-') ? 60 * Number($("#" + event.target.id).parent().prev().val()) : 0;
+
+           if (tmpDuration < 0 || tmpDuration > (180 * 60) || !($.isNumeric($("#" + event.target.id).parent().prev().val()))) {
+             $($("#" + event.target.id).parents(".input-group").next("ul[id*='error-']")).append(globalAppState.errorLib['durationError']); 
+             $($("#" + event.target.id).parents(".input-group").next("ul[id*='error-']")).addClass("alert alert-danger");
+           }
+
+           else {
+             $($("#" + event.target.id).parents(".input-group").next("ul[id*='error-']")).html("");
+             $($("#" + event.target.id).parents(".input-group").next("ul[id*='error-']")).removeClass("alert alert-danger");
+
+             if(!zone) {
+               return continuationFn(event);
+             } // Polymorphic pass-through.
+             continuationFn(zoneId, tmpDuration);
            }
          }
        }
+
+       function setDurationAll (event) {
+         $("input[id*='duration-']").val($("#duration-all").val());
+       }
+       
+       function clearAllBtn (event) {
+         $("input[id*='duration-']").val(0);
+       };
+
+       function runAllBtn (event) {
+         var timeBuffer = 1;
+         function debounceClicks(first, rest) {
+           setTimeout(function () { first.click(); }, timeBuffer * 250); // arbitrary delay between ajax requests in ms.
+           if(rest.length == 0) {
+             first.click();
+             return; //halt.
+           }
+           timeBuffer++;
+           return debounceClicks(rest.first(), rest.slice(1));
+         }
+         debounceClicks($("button[id*='btn-on-']").first(), $("button[id*='btn-on']").slice(1));
+         // $("button[id*='btn-on-']").click(); // I'm pretty sure this is overhwelming the API, sending too many req's quickly
+       };
 
        function makeZoneRow (zone) {
          const zoneId = getId(zone);
@@ -114,7 +152,7 @@
                   </div>\
                   <div class="panel-body">\
                     <div class="col-md-6">\
-                        <img src="' + getImg(zone.customNozzle) + '"/><img src="' + getImg(zone.customCrop) + '"/>\
+                      <img src="' + getImg(zone.customNozzle) + '"/><img src="' + getImg(zone.customCrop) + '"/>\
                     </div>\
                     <div class="col-md-6" id="zone-buttons">\
                       <h3>Time Remaining: <div id="time-remaining-' + zoneId +'">0</div> Minutes</h3>\
@@ -123,9 +161,10 @@
                         <span class="input-group-addon" id="duration-addon">Duration (Minutes):</span>\
                         <input type="number" class="form-control" id="duration-' + zoneId + '" aria-describedby="duration-addon"></input>\
                         <div class="input-group-btn">\
-                          <button class="btn btn-lg btn-success" id="btn-on-' + zoneId + '">On</button>\
-                          <button class="btn btn-lg btn-warning" id="btn-off-' + zoneId + '">Off</button>\
-                        </div>\
+                          '+ btnComponent ("btn-success", "btn-on-" + zoneId, "On", makeBtnEvent(startZoneAjax, "btn-on-", zone))
+                           + btnComponent ("btn-warning", "btn-off-" + zoneId, "Off", makeBtnEvent(startZoneAjax, "btn-off-", zone))
+                           +
+                       '</div>\
                       </div>\
                       <ul id="error-' + zoneId +'"></ul>\
                     </div>\
@@ -135,17 +174,13 @@
             </div>';
        }
 
-       $("#get-zones").on('click', function (event) {  
-
+       $("#get-zones").on('click', function (event) {   // this is the only button that can be clicked at first.
          globalAppState['authKey'] = $("#api-key").val(); // we need this set on click. 
 
-         if (globalAppState.authKey.length > 36 || globalAppState.authKey.length < 36) { // small client-side validation
-
+         if (globalAppState.authKey.length > 36 || globalAppState.authKey.length < 36) {
            $("#key-error-list").append(globalAppState.errorLib['keyLengthError']);
            $("#key-error-list").addClass("alert alert-danger");
-
          } else {
-
            $("#key-error-list").html("");
            $("#key-error-list").removeClass("alert alert-danger");
 
@@ -159,8 +194,8 @@
                console.log("Status: ", textStatus + "\n" + "The jQuery XHR: ", JSON.stringify(jqXHR) + "\n");
                console.log("The exception (may be null or undefined): ", errorThrown);
              }
-           }); // *ALERT* jQuery docs recommend against using ajaxSetup.  In this case, it should DRY the code.
-           
+           }); // *ALERT* jQuery docs recommend against using ajaxSetup.
+
            $.ajax({
              url: "https://api.rach.io/1/public/person/info",
              success: function (res) {
@@ -174,65 +209,25 @@
                      device.zones.sort(function (a,b) {
                        return a.zoneNumber - b.zoneNumber;
                      });
-
+                     
                      $("#zone-list-container").append('<p><div class="row"><div class="col-md-12"><h1>'+ getName(device) +'</h1>\
                         <div class="input-group input-group-lg">\
                           <span class="input-group-addon" id="duration-addon-all">Duration (Minutes):</span>\
                           <input type="number" class="form-control" id="duration-all" aria-describedby="duration-addon-all"></input>\
                           <div class="input-group-btn">\
-                            <button class="btn btn-lg btn-success" id="btn-set-all">Set All</button>\
-                            <button class="btn btn-lg btn-warning" id="btn-clear-all">Clear All</button>\
-                            <button class="btn btn-lg btn-info" id="btn-run-all">Run All</button>\
-                          </div>\
+                            '+ btnComponent ("btn-success", "btn-on-all", "Set All", makeBtnEvent(setDurationAll, "btn-on-")) 
+                             + btnComponent ("btn-warning", "btn-off-all", "Clear All", makeBtnEvent(clearAllBtn, "btn-off-"))
+                             + btnComponent ("btn-info", "btn-run-all", "Run All", makeBtnEvent(runAllBtn))
+                             +
+                            '</div>\
                         </div>\
                         <ul id="error-duration-all"></ul>\
                       </div></div>\
                       <p>');
-                     // this component is right on the cusp of being factored out.
-                     // It's just a few bits of difference off between this and the same part in the zone components.
-                     // and that difference is difficult to accomodate into one fn signature. 
-
-                     $('#btn-set-all').click(function (event) {
-                       const tmpDuration = 60 * Number($("#duration-all").val()) || 0;
-
-                       if (tmpDuration < 0 || tmpDuration > (180 * 60) || !($.isNumeric($("#duration-all").val()))) {
-                         $("#error-duration-all").append(globalAppState.errorLib['durationError']);
-                         $("#error-duration-all").addClass("alert alert-danger");
-                       }
-                       
-                       else {
-                         $("#error-duration-all").html("");
-                         $("#error-duration-all").removeClass("alert alert-danger");
-
-                         $("input[id*='duration-']").val($("#duration-all").val());
-                       }
-                     });
-
-                     $('#btn-clear-all').click(function (event) {
-                       $("input[id*='duration-']").val(0);
-                     });
-
-                     $("#btn-run-all").click(function (event) {
-                       var timeBuffer = 1;
-                       function clickButtonsSlowly(first, rest) {
-                         setTimeout(function () { first.click(); }, timeBuffer * 500); // arbitrary delay between ajax requests.
-                         if(rest.length == 0) {
-                           first.click();
-                           return; //halt.
-                         }
-                         timeBuffer++;
-                         return clickButtonsSlowly(rest.first(), rest.slice(1));
-                       }
-                       clickButtonsSlowly($("button[id*='btn-on-']").first(), $("button[id*='btn-on']").slice(1));
-                       // $("button[id*='btn-on-']").click(); // I'm pretty sure this is overhwelming the API, sending too many req's quickly
-                     });
                      
-                     // $("#zone-list-container").append('')
                      device.zones.forEach(function (zone) {
                        $("#zone-list-container").append(makeZoneRow(zone));
-                       $("#btn-on-" + getId(zone)).click(makeBtnEvent(zone, "btn-on-"));
-                       $("#btn-off-" + getId(zone)).click(makeBtnEvent(zone, "btn-off-"));
-                     })
+                     });
                    })
                  }
                });
