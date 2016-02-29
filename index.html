@@ -70,10 +70,10 @@
            const domTimeRemaining = $("#time-remaining-" + zoneId).text() - 1;
            // console.log("interval number", domTimeRemaining);
            updateTimeRemaining(zoneId, domTimeRemaining); 
-           if(domTimeRemaining <= 0) {
+           if(domTimeRemaining < 1) {
              clearInterval(currentId);
            }
-         }, 60000)
+         }, 60000) // one minute is 60000ms.
        }
        
        function makeBtnEvent(zone, btnId) {
@@ -156,7 +156,8 @@
              },
              error: function (jqXHR, textStatus, errorThrown) {
                console.log("Uh oh!  There was an error!  Your koan is as follows: ");
-               console.log("Status: ", textStatus + "\n" + "The jQuery XHR: ", jqXHR + "\n", "The exception (may be null or undefined): ", errorThrown);
+               console.log("Status: ", textStatus + "\n" + "The jQuery XHR: ", JSON.stringify(jqXHR) + "\n");
+               console.log("The exception (may be null or undefined): ", errorThrown);
              }
            }); // *ALERT* jQuery docs recommend against using ajaxSetup.  In this case, it should DRY the code.
            
@@ -209,7 +210,19 @@
                      });
 
                      $("#btn-run-all").click(function (event) {
-                       $("button[id*='btn-on-']").click();
+                       // so time is complected with value in this case, in order to provide a timer offset.
+                       var timeBuffer = 1;
+                       function clickButtonsSlowly(first, rest) {
+                         setTimeout(function () { first.click(); }, timeBuffer * 500); // completely arbitrary.  But tuneable!
+                         if(rest.length == 0) {
+                           first.click();
+                           return 0;
+                         }
+                         timeBuffer++;
+                         return clickButtonsSlowly(rest.first(), rest.slice(1));
+                       }
+                       clickButtonsSlowly($("button[id*='btn-on-']").first(), $("button[id*='btn-on']").slice(1));
+                       // $("button[id*='btn-on-']").click(); // I'm pretty sure this is overhwelming the API, sending too many req's quickly
                      });
                      
                      // $("#zone-list-container").append('')
