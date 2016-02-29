@@ -120,7 +120,7 @@
                       <h3>Time Remaining: <div id="time-remaining-' + zoneId +'">0</div> Minutes</h3>\
                       <p>\
                       <div class="input-group input-group-lg">\
-                        <span class="input-group-addon" id="duration-addon">Duration:</span>\
+                        <span class="input-group-addon" id="duration-addon">Duration (Minutes):</span>\
                         <input type="number" class="form-control" id="duration-' + zoneId + '" aria-describedby="duration-addon"></input>\
                         <div class="input-group-btn">\
                           <button class="btn btn-lg btn-success" id="btn-on-' + zoneId + '">On</button>\
@@ -177,7 +177,7 @@
 
                      $("#zone-list-container").append('<p><div class="row"><div class="col-md-12"><h1>'+ getName(device) +'</h1>\
                         <div class="input-group input-group-lg">\
-                          <span class="input-group-addon" id="duration-addon-all">Duration:</span>\
+                          <span class="input-group-addon" id="duration-addon-all">Duration (Minutes):</span>\
                           <input type="number" class="form-control" id="duration-all" aria-describedby="duration-addon-all"></input>\
                           <div class="input-group-btn">\
                             <button class="btn btn-lg btn-success" id="btn-set-all">Set All</button>\
@@ -185,21 +185,24 @@
                             <button class="btn btn-lg btn-info" id="btn-run-all">Run All</button>\
                           </div>\
                         </div>\
-                        <ul id="error-dur-all"></ul>\
+                        <ul id="error-duration-all"></ul>\
                       </div></div>\
                       <p>');
+                     // this component is right on the cusp of being factored out.
+                     // It's just a few bits of difference off between this and the same part in the zone components.
+                     // and that difference is difficult to accomodate into one fn signature. 
 
                      $('#btn-set-all').click(function (event) {
                        const tmpDuration = 60 * Number($("#duration-all").val()) || 0;
 
                        if (tmpDuration < 0 || tmpDuration > (180 * 60) || !($.isNumeric($("#duration-all").val()))) {
-                         $("#error-dur-all").append(globalAppState.errorLib['durationError']);
-                         $("#error-dur-all").addClass("alert alert-danger");
+                         $("#error-duration-all").append(globalAppState.errorLib['durationError']);
+                         $("#error-duration-all").addClass("alert alert-danger");
                        }
                        
                        else {
-                         $("#error-dur-all").html("");
-                         $("#error-dur-all").removeClass("alert alert-danger");
+                         $("#error-duration-all").html("");
+                         $("#error-duration-all").removeClass("alert alert-danger");
 
                          $("input[id*='duration-']").val($("#duration-all").val());
                        }
@@ -210,13 +213,12 @@
                      });
 
                      $("#btn-run-all").click(function (event) {
-                       // so time is complected with value in this case, in order to provide a timer offset.
                        var timeBuffer = 1;
                        function clickButtonsSlowly(first, rest) {
-                         setTimeout(function () { first.click(); }, timeBuffer * 500); // completely arbitrary.  But tuneable!
+                         setTimeout(function () { first.click(); }, timeBuffer * 500); // arbitrary delay between ajax requests.
                          if(rest.length == 0) {
                            first.click();
-                           return 0;
+                           return; //halt.
                          }
                          timeBuffer++;
                          return clickButtonsSlowly(rest.first(), rest.slice(1));
