@@ -47,14 +47,13 @@
     <script>
      $( document ).ready(function () {
        // -- model
-
        var globalAppState = {
          authKey: "",
          personId: "",
          deviceList: [],
          errorLib: {
-           keyLengthError: "<li> Valid keys are 36 characters in size, including dashes. </li>",
-           durationError: "<li> Duration must be a number between 0 and 180 minutes.</li>"
+           keyLengthError: '<li> Valid keys are 36 characters in size, including dashes. </li>',
+           durationError: '<li> Duration must be a number between 0 and 180 minutes.</li>'
          },
        }
 
@@ -73,6 +72,18 @@
 
        function updateTimeRemaining (zoneId, time) {
          $("#time-remaining-" + zoneId).text(time);
+         // console.log(time);
+         console.log($("#zone-block-" + zoneId).find(".panel"));
+         if(time == 0) {
+           $("#zone-block-" + zoneId).find(".panel").removeClass("panel-default");
+           $("#zone-block-" + zoneId).find(".panel").removeClass("panel-info");
+           $("#zone-block-" + zoneId).find(".panel").addClass("panel-success");
+         }
+         if(time > 0) {
+           $("#zone-block-" + zoneId).find(".panel").removeClass("panel-default");
+           $("#zone-block-" + zoneId).find(".panel").removeClass("panel-success");
+           $("#zone-block-" + zoneId).find(".panel").addClass("panel-info");
+         }
        }
 
        function startUpdates(zoneId) {
@@ -154,34 +165,33 @@
 
        function makeZoneRow (zone) {
          const zoneId = getId(zone);
-         return '<div class="row" id="zone-block-'+ zoneId +'">\
-              <div class="col-md-12">\
-                <div class="panel panel-default">\
-                  <div class="panel-heading">\
-                    <h2 class="panel-title">' + getName(zone) + '</h2>\
-                  </div>\
-                  <div class="panel-body">\
-                    <div class="col-md-6">\
-                      <img src="' + getImg(zone.customNozzle) + '"/><img src="' + getImg(zone.customCrop) + '"/>\
-                    </div>\
-                    <div class="col-md-6" id="zone-buttons">\
-                      <h3>Time Remaining: <div id="time-remaining-' + zoneId +'">0</div> Minutes</h3>\
-                      <p>\
-                      <div class="input-group input-group-lg">\
-                        <span class="input-group-addon" id="duration-addon">Duration (Minutes):</span>\
-                        <input type="number" class="form-control" id="duration-' + zoneId + '" aria-describedby="duration-addon"></input>\
-                        <div class="input-group-btn">\
-                          '+ btnComponent ("btn-success", "btn-on-" + zoneId, "On", makeBtnEvent(startZoneAjax, "btn-on-", zone))
-                           + btnComponent ("btn-warning", "btn-off-" + zoneId, "Off", makeBtnEvent(startZoneAjax, "btn-off-", zone))
-                           +
-                       '</div>\
-                      </div>\
-                      <ul id="error-' + zoneId +'"></ul>\
-                    </div>\
-                  </div>\
-                </div>\
-              </div>\
-            </div>';
+         return '<div class="row" id="zone-block-'+ zoneId +'">' +
+              '<div class="col-md-12">' +
+                '<div class="panel panel-default">' +
+                  '<div class="panel-heading">' +
+                    '<h2 class="panel-title">' + getName(zone) + '</h2>' +
+                  '</div>' +
+                  '<div class="panel-body">' +
+                    '<div class="col-md-6">' +
+                      '<img src="' + getImg(zone.customNozzle) + '"/><img src="' + getImg(zone.customCrop) + '"/>' +
+                    '</div>' +
+                    '<div class="col-md-6" id="zone-buttons">' +
+                      '<h3>Time Remaining: <div id="time-remaining-' + zoneId +'">0</div> Minutes</h3>' +
+                      '<p>' +
+                      '<div class="input-group input-group-lg">' +
+                        '<span class="input-group-addon" id="duration-addon">Duration (Minutes):</span>' +
+                        '<input type="number" class="form-control" id="duration-' + zoneId + '" aria-describedby="duration-addon"></input>' +
+                        '<div class="input-group-btn">' +
+                          btnComponent ("btn-success", "btn-on-" + zoneId, "On", makeBtnEvent(startZoneAjax, "btn-on-", zone)) + 
+                          btnComponent ("btn-warning", "btn-off-" + zoneId, "Off", makeBtnEvent(startZoneAjax, "btn-off-", zone)) + 
+                       '</div>' +
+                      '</div>' +
+                      '<ul id="error-' + zoneId +'"></ul>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
        }
 
        $("#get-zones").on('click', function (event) {   // this is the only button that can be clicked at first.
@@ -220,20 +230,19 @@
                        return a.zoneNumber - b.zoneNumber;
                      });
                      
-                     $("#zone-list-container").append('<p><div class="row"><div class="col-md-12"><h1>'+ getName(device) +'</h1>\
-                        <div class="input-group input-group-lg">\
-                          <span class="input-group-addon" id="duration-addon-all">Duration (Minutes):</span>\
-                          <input type="number" class="form-control" id="duration-all" aria-describedby="duration-addon-all"></input>\
-                          <div class="input-group-btn">\
-                            '+ btnComponent ("btn-success", "btn-on-all", "Set All", makeBtnEvent(setDurationAll, "btn-on-")) 
-                             + btnComponent ("btn-warning", "btn-off-all", "Clear All", makeBtnEvent(clearAllBtn, "btn-off-"))
-                             + btnComponent ("btn-info", "btn-run-all", "Run All", makeBtnEvent(runAllBtn))
-                             +
-                            '</div>\
-                        </div>\
-                        <ul id="error-duration-all"></ul>\
-                      </div></div>\
-                      <p>');
+                     $("#zone-list-container").append('<p><div class="row"><div class="col-md-12"><h1>'+ getName(device) +'</h1>' +
+                        '<div class="input-group input-group-lg">' +
+                          '<span class="input-group-addon" id="duration-addon-all">Duration (Minutes):</span>' +
+                          '<input type="number" class="form-control" id="duration-all" aria-describedby="duration-addon-all"></input>' +
+                          '<div class="input-group-btn">' +
+                            btnComponent ("btn-success", "btn-on-all", "Set All", makeBtnEvent(setDurationAll, "btn-on-")) +
+                            btnComponent ("btn-warning", "btn-off-all", "Clear All", makeBtnEvent(clearAllBtn, "btn-off-")) + 
+                            btnComponent ("btn-info", "btn-run-all", "Run All", makeBtnEvent(runAllBtn)) + 
+                            '</div>' +
+                        '</div>' +
+                        '<ul id="error-duration-all"></ul>' +
+                      '</div></div>' +
+                      '<p>');
                      
                      device.zones.forEach(function (zone) {
                        $("#zone-list-container").append(makeZoneRow(zone));
