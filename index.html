@@ -72,8 +72,6 @@
 
        function updateTimeRemaining (zoneId, time) {
          $("#time-remaining-" + zoneId).text(time);
-         // console.log(time);
-         console.log($("#zone-block-" + zoneId).find(".panel"));
          if(time == 0) {
            $("#zone-block-" + zoneId).find(".panel").removeClass("panel-default");
            $("#zone-block-" + zoneId).find(".panel").removeClass("panel-info");
@@ -160,7 +158,7 @@
            return debounceClicks(rest.first(), rest.slice(1));
          }
          debounceClicks($("button[id*='btn-on-']").first(), $("button[id*='btn-on']").slice(1));
-         // $("button[id*='btn-on-']").click(); // I'm pretty sure this is overhwelming the API, sending too many req's quickly
+         // $("button[id*='btn-on-']").click();
        };
 
        function makeZoneRow (zone) {
@@ -195,7 +193,7 @@
        }
 
        $("#get-zones").on('click', function (event) {   // this is the only button that can be clicked at first.
-         globalAppState['authKey'] = $("#api-key").val(); // we need this set on click. 
+         globalAppState['authKey'] = $("#api-key").val(); 
 
          if (globalAppState.authKey.length > 36 || globalAppState.authKey.length < 36) {
            $("#key-error-list").append(globalAppState.errorLib['keyLengthError']);
