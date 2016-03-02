@@ -71,8 +71,8 @@
        }
 
        function updateTimeRemaining (zoneId, time) {
-         $("#time-remaining-" + zoneId).text(time);
-         if(time == 0) {
+         $("#time-remaining-" + zoneId).text(time); //set
+         if(time < 1) {
            $("#zone-block-" + zoneId).find(".panel").removeClass("panel-default");
            $("#zone-block-" + zoneId).find(".panel").removeClass("panel-info");
            $("#zone-block-" + zoneId).find(".panel").addClass("panel-success");
@@ -86,7 +86,7 @@
 
        function startUpdates(zoneId) {
          var currentId = setInterval (function () {
-           const domTimeRemaining = $("#time-remaining-" + zoneId).text() - 1;
+           const domTimeRemaining = $("#time-remaining-" + zoneId).text() - 1; // get
            updateTimeRemaining(zoneId, domTimeRemaining); 
            if(domTimeRemaining < 1) {
              clearInterval(currentId);
@@ -102,7 +102,7 @@
            data: "{id : " + zoneId + ", duration : " + duration + "}",
            success: function (res) {
              startUpdates(zoneId);
-             updateTimeRemaining(zoneId, (duration/60).toFixed(0));
+             // updateTimeRemaining(zoneId, (duration/60).toFixed(0));
            }
          });
        }
