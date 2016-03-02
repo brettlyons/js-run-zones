@@ -120,7 +120,7 @@
 
          if (!btnId) {
            return continuationFn;
-         }
+         } // Parametric polymorphism
 
          return function (event) {
            const tmpDuration = (btnId == 'btn-on-') ? 60 * Number($("#" + event.target.id).parent().prev().val()) : 0;
@@ -136,7 +136,7 @@
 
              if(!zone) {
                return continuationFn(event);
-             } // Polymorphic pass-through.
+             } // more polymorphic pass-through.
              continuationFn(zoneId, tmpDuration);
            }
          }
