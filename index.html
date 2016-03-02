@@ -236,7 +236,7 @@
                           '<span class="input-group-addon" id="duration-addon-all">Duration (Minutes):</span>' +
                           '<input type="number" class="form-control" id="duration-all" aria-describedby="duration-addon-all"></input>' +
                           '<div class="input-group-btn">' +
-                            btnComponent ("btn-success", "btn-on-all", "Set All", makeBtnEvent(setDurationAll, "btn-on-")) +
+                            btnComponent ("btn-success", "btn-set-all", "Set All", makeBtnEvent(setDurationAll, "btn-on-")) + // cheeky hack.
                             btnComponent ("btn-warning", "btn-off-all", "Clear All", makeBtnEvent(clearAllBtn, "btn-off-")) + 
                             btnComponent ("btn-info", "btn-run-all", "Run All", makeBtnEvent(runAllBtn)) + 
                             '</div>' +
